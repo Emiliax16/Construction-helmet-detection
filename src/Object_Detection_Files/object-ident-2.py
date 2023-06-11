@@ -1,6 +1,14 @@
 import cv2
+import time
 
 #thres = 0.45 # Threshold to detect object
+
+# Variables globales
+human_detected = False  # Indica si se ha detectado un humano recientemente
+human_timer = 0  # Temporizador para controlar el tiempo de espera después de detectar un humano
+human_printed = False  # Indica si se ha impreso el mensaje "HUMANO SIN TAZA!" recientemente
+cup_detected = False  # Indica si se ha detectado una taza recientemente
+
 
 classNames = []
 classFile = "../../db/object_detect/coco.names"
@@ -47,7 +55,45 @@ if __name__ == "__main__":
 
     while True:
         success, img = cap.read()
-        result, objectInfo = getObjects(img,0.45,0.2, objects=['cup'])
+        result, objectInfo = getObjects(img,0.45,0.2, objects=['cup', 'person'])
         #print(objectInfo)
-        cv2.imshow("Output",img)
+
+        if success:
+            if len(objectInfo) > 0 and not human_detected:
+                # Buscamos si hay un humano
+                for obj in objectInfo:
+                    for name in obj:
+                        if name == 'person':
+                            print("HUMANO DETECTADO!")
+                            human_detected = True
+                            human_timer = time.time()
+                            human_printed = False
+                            break
+                    if human_detected:
+                        break
+            elif len(objectInfo) > 0 and human_detected:
+                # Chequeamos si ya pasaron 3 segundos
+                print(time.time() - human_timer)
+                if time.time() - human_timer <= 3:
+                    # Chequeamos si hay una taza
+                    for obj in objectInfo:
+                        for name in obj:
+                            if name == 'cup':
+                                cup_detected = True
+                                print("HUMANO CON TAZA!")
+                                break
+                        if cup_detected:
+                            break
+                elif time.time() - human_timer > 3 and time.time() - human_timer <= 10 and not human_printed and not cup_detected:
+                    if not cup_detected:
+                        if not human_printed:
+                            print("HUMANO SIN TAZA!!!!!")
+                            human_printed = True
+                elif time.time() - human_timer > 10:
+                    human_detected = False
+                    cup_detected = False
+                    human_printed = False
+                    human_timer = 0
+                    
+            cv2.imshow("Output",img)
         cv2.waitKey(1)

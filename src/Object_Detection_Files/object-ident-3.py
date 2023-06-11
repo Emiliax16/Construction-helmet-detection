@@ -55,7 +55,7 @@ if __name__ == "__main__":
     
     while True:
         success, img = cap.read()
-        result, objectInfo = getObjects(img,0.45,0.2, objects=['cup','horse'])
+        result, objectInfo = getObjects(img,0.45,0.2, objects=['cup','person'])
         #print(objectInfo)
         
         
