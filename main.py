@@ -1,6 +1,8 @@
 import cv2
 import time
 
+import pygame
+
 #thres = 0.45 # Threshold to detect object
 
 # Variables globales
@@ -11,12 +13,12 @@ cup_detected = False  # Indica si se ha detectado una taza recientemente
 
 
 classNames = []
-classFile = "../../db/object_detect/coco.names"
+classFile = "db/object_detect/coco.names"
 with open(classFile,"rt") as f:
     classNames = f.read().rstrip("\n").split("\n")
 
-configPath = "../../db/object_detect/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt"
-weightsPath = "../../db/object_detect/frozen_inference_graph.pb"
+configPath = "db/object_detect/ssd_mobilenet_v3_large_coco_2020_01_14.pbtxt"
+weightsPath = "db/object_detect/frozen_inference_graph.pb"
 
 net = cv2.dnn_DetectionModel(weightsPath,configPath)
 net.setInputSize(320,320)
@@ -51,19 +53,21 @@ if __name__ == "__main__":
     cap.set(3,640)
     cap.set(4,480)
     #cap.set(10,70)
-
+    pygame.mixer.init()
+    # Ruta del archivo WAV
+    ruta_archivo_wav = "DEFINITIVO.wav"
+    pygame.mixer.music.load(ruta_archivo_wav)
 
     while True:
         success, img = cap.read()
         result, objectInfo = getObjects(img,0.45,0.2, objects=['cup', 'person'])
-        #print(objectInfo)
 
         if success:
             if len(objectInfo) > 0 and not human_detected:
                 # Buscamos si hay un humano
                 for obj in objectInfo:
                     for name in obj:
-                        if name == 'person':
+                        if isinstance(name, str) and name == 'person':
                             print("HUMANO DETECTADO!")
                             human_detected = True
                             human_timer = time.time()
@@ -73,23 +77,23 @@ if __name__ == "__main__":
                         break
             elif len(objectInfo) > 0 and human_detected:
                 # Chequeamos si ya pasaron 3 segundos
-               # print(time.time() - human_timer)
-                if time.time() - human_timer <= 4:
+                if time.time() - human_timer <= 4 and not cup_detected:
                     # Chequeamos si hay una taza
                     for obj in objectInfo:
                         for name in obj:
-                            if name == 'cup':
+                            if isinstance(name, str) and name == 'cup':
                                 cup_detected = True
-                                print("HUMANO CON TAZA!")
+                                print("HUMANO CON SEUDO CASCO!")
                                 break
                         if cup_detected:
                             break
-                elif time.time() - human_timer > 3 and time.time() - human_timer <= 10 and not human_printed and not cup_detected:
+                elif time.time() - human_timer > 4 and time.time() - human_timer <= 12 and not human_printed and not cup_detected:
                     if not cup_detected:
                         if not human_printed:
-                            print("HUMANO SIN TAZA!!!!!")
+                            print("HUMANO SIN SEUDO CASCO!")
                             human_printed = True
-                elif time.time() - human_timer > 10:
+                            pygame.mixer.music.play()
+                elif time.time() - human_timer > 12:
                     human_detected = False
                     cup_detected = False
                     human_printed = False
